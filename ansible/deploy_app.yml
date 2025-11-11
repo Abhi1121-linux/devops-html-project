@@ -1,0 +1,25 @@
+---
+- hosts: 192.168.5.136
+  become: yes
+
+  tasks:
+    - name: Copy Dockerfile
+      copy:
+        src: ../docker/
+        dest: /opt/devops_project/docker
+
+    - name: Build Docker Image
+      docker_image:
+       path: /opt/devops_project/docker
+       name: devops-html
+       tag: latest
+       state: present
+
+    - name: Run Docker Container
+      docker_container:
+        name: devops-html
+        image: devops-html:latest
+        state: started
+        restart_policy: always
+        ports:
+          - "8089:8089"
