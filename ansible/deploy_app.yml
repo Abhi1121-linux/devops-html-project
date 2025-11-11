@@ -1,25 +1,24 @@
----
-- hosts: 192.168.5.136
-  become: yes
-
+- name: Deploy DevOps HTML Project
+  hosts: webservers
+  become: true
   tasks:
-    - name: Copy Dockerfile
-      copy:
-        src: ../docker/
-        dest: /opt/devops_project/docker
+    - name: Stop existing container
+      command: docker rm -f devops-html
+      ignore_errors: yes
 
-    - name: Build Docker Image
-      docker_image:
-       path: /opt/devops_project/docker
-       name: devops-html
-       tag: latest
-       state: present
+    - name: Remove old image
+      command: docker rmi devops-html:latest
+      ignore_errors: yes
 
-    - name: Run Docker Container
-      docker_container:
-        name: devops-html
-        image: devops-html:latest
-        state: started
-        restart_policy: always
-        ports:
-          - "8089:8089"
+    - name: Copy project files
+      synchronize:
+        src: "{{ playbook_dir }}/../"
+        dest: /home/abhishek/devops_project/
+        recursive: yes
+        delete: yes
+
+    - name: Build new Docker image
+      command: docker build -t devops-html:latest /home/abhishek/devops_project/
+
+    - name: Run container
+      command: docker run -d -p 8089:80 --name devops-html devops-html:latest
